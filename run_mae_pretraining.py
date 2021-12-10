@@ -6,6 +6,22 @@
 # https://github.com/facebookresearch/dino
 # --------------------------------------------------------'
 
+'''
+OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=8 run_mae_pretraining.py \
+        --data_path /data/dengzhijie/imagenet \
+        --mask_ratio 0.75 \
+        --model pretrain_mae_base_patch16_224 \
+        --batch_size 128 \
+        --opt adamw \
+        --opt_betas 0.9 0.95 \
+        --warmup_epochs 40 \
+        --epochs 1600 \
+        --output_dir output/pretrain_mae_base_patch16_224_cutmix \
+        --beta 1.0 \
+        --cutmix_prob 0.5 \
+        
+'''
+
 import argparse
 import datetime
 import numpy as np
@@ -45,7 +61,7 @@ def get_args():
 
     parser.add_argument('--drop_path', type=float, default=0.0, metavar='PCT',
                         help='Drop path rate (default: 0.1)')
-                        
+
     parser.add_argument('--normlize_target', default=True, type=bool,
                         help='normalized the target patch pixels')
 
@@ -63,7 +79,7 @@ def get_args():
     parser.add_argument('--weight_decay', type=float, default=0.05,
                         help='weight decay (default: 0.05)')
     parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
-        weight decay. We use a cosine schedule for WD. 
+        weight decay. We use a cosine schedule for WD.
         (Set the same value with args.weight_decay to keep weight decay no change)""")
 
     parser.add_argument('--lr', type=float, default=1.5e-4, metavar='LR',
@@ -83,6 +99,10 @@ def get_args():
                         help='Color jitter factor (default: 0.4)')
     parser.add_argument('--train_interpolation', type=str, default='bicubic',
                         help='Training interpolation (random, bilinear, bicubic default: "bicubic")')
+    parser.add_argument('--beta', default=0, type=float,
+                        help='hyperparameter beta')
+    parser.add_argument('--cutmix_prob', default=0, type=float,
+                        help='cutmix probability')
 
     # Dataset parameters
     parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/061417/train', type=str,
@@ -237,6 +257,7 @@ def main(args):
             wd_schedule_values=wd_schedule_values,
             patch_size=patch_size[0],
             normlize_target=args.normlize_target,
+            beta=args.beta, cutmix_prob=args.cutmix_prob
         )
         if args.output_dir:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:

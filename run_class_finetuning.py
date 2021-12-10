@@ -5,6 +5,19 @@
 # https://github.com/facebookresearch/deit
 # https://github.com/facebookresearch/dino
 # --------------------------------------------------------'
+'''
+OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=8 run_class_finetuning.py \
+    --model vit_base_patch16_224 \
+    --data_path /data/chenjianfei/imagenet \
+    --finetune output/pretrain_mae_base_patch16_224_cutmix/checkpoint-359.pth \
+    --output_dir output \
+    --batch_size 64 \
+    --opt adamw \
+    --opt_betas 0.9 0.999 \
+    --weight_decay 0.05 \
+    --epochs 100 \
+    --dist_eval
+'''
 
 import argparse
 import datetime
@@ -415,7 +428,7 @@ def main(args, ds_init):
 
         optimizer = create_optimizer(
             args, model_without_ddp, skip_list=skip_weight_decay_list,
-            get_num_layer=assigner.get_layer_id if assigner is not None else None, 
+            get_num_layer=assigner.get_layer_id if assigner is not None else None,
             get_layer_scale=assigner.get_scale if assigner is not None else None)
         loss_scaler = NativeScaler()
 
